@@ -6,6 +6,36 @@ import os
 import logging
 from tqdm import tqdm
 
+
+def evaluate(model, eval_dataset):
+    """
+    Transformer 모델 검증 함수
+    Args:
+        model (nn.Module): Transformer 모델
+        eval_dataset (DataLoader): 검증 데이터셋
+
+    Returns:
+        float: 검증 손실 값 (Validation Loss)
+    """
+    model.eval()  # 모델을 평가 모드로 설정
+    total_loss = 0.0
+    total_batches = len(eval_dataset)
+
+    with torch.no_grad():  # 그라디언트 계산 비활성화 (메모리 절약)
+        for data in eval_dataset:
+            input = data['input'].to(model.device)
+            target = data['target'].to(model.device)
+            input_mask = data['input_mask'].to(model.device)
+            target_mask = data['target_mask'].to(model.device)
+
+            _, loss = model(input, target, input_mask, target_mask, labels=target)
+
+            total_loss += loss.item()
+
+    avg_loss = total_loss / total_batches
+    return avg_loss
+
+
 def setup_logger(log_path):
     logger = logging.getLogger("TrainLogger")
     logger.setLevel(logging.INFO)
