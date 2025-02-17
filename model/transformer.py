@@ -1,3 +1,6 @@
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from util import ResidualConnection, FeedForward, Embeddings, PositionalEncoding, Generator
 import torch.nn as nn
 from torch.nn import CrossEntropyLoss
@@ -5,8 +8,20 @@ import torch
 import math
 import copy
 
+import torch.nn as nn
+import copy
+
 def clones(module, N):
+    """
+    동일한 모듈을 N개 복제하여 nn.ModuleList로 반환
+    Args:
+        module (nn.Module): 복제할 모듈
+        N (int): 생성할 모듈 개수
+    Returns:
+        nn.ModuleList: 동일한 모듈 N개를 포함하는 리스트
+    """
     return nn.ModuleList([copy.deepcopy(module) for _ in range(N)])
+
 
 class SelfAttention(nn.Module):
     def __init__(self):
@@ -96,15 +111,20 @@ class Decoder(nn.Module):
         return x
 
 class Transformer(nn.Module):
-    def __init__(self, vocab_num, dim, max_seq_len, head_num, dropout, N):
-        super(Transformer,self).__init__()
+    def __init__(self, vocab_num, dim, max_seq_len, head_num, dropout, N, device=None):
+        super(Transformer, self).__init__()
+
+        self.device = device if device else torch.device("cuda" if torch.cuda.is_available() else "cpu")  # ✅ device 속성 추가
+
         self.embedding = Embeddings(vocab_num, dim)
         self.positional_encoding = PositionalEncoding(max_seq_len, dim)
 
-        self.encoders = clones(Encoder(dim=dim, head_num=head_num, dropout=dropout))
-        self.decoders = clones(Decoder(dim=dim, head_num=head_num, dropout=dropout))
+        self.encoders = clones(Encoder(dim=dim, head_num=head_num, dropout=dropout), N)
+        self.decoders = clones(Decoder(dim=dim, head_num=head_num, dropout=dropout), N)
 
-        self.generator = Generator(dim,vocab_num)
+        self.generator = Generator(dim, vocab_num)
+
+        self.to(self.device) 
 
     def forward(self, input, target, input_mask, target_mask, labels=None):
         x=self.positional_encoding(self.embedding(input))

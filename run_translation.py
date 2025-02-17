@@ -10,17 +10,23 @@ from model.dataset_loader import TranslationDataset
 def collate_fn(batch):
     input_tensors = [item["input"] for item in batch]
     target_tensors = [item["target"] for item in batch]
-    
+    input_mask_tensors = [item["input_mask"] for item in batch]  
+    target_mask_tensors = [item["target_mask"] for item in batch]  
+
     input_padded = torch.nn.utils.rnn.pad_sequence(input_tensors, batch_first=True, padding_value=0)
     target_padded = torch.nn.utils.rnn.pad_sequence(target_tensors, batch_first=True, padding_value=0)
+    input_mask_padded = torch.nn.utils.rnn.pad_sequence(input_mask_tensors, batch_first=True, padding_value=0)  # ✅ 추가
+    target_mask_padded = torch.nn.utils.rnn.pad_sequence(target_mask_tensors, batch_first=True, padding_value=0)  # ✅ 추가
 
     return {
         "input": input_padded,
-        "target": target_padded
+        "target": target_padded,
+        "input_mask": input_mask_padded, 
+        "target_mask": target_mask_padded  
     }
 
 
-DATASET_PATH = "/home/sophia435256/workspace2/dataset/korea_china_word_bag"
+DATASET_PATH = "/home/sophia435256/workspace2/dataset/korea_china_word_bag/korea_china_word_bag"
 CHECKPOINT_PATH = "./checkpoints"
 
 model_name = 'transformer-translation-spoken'
